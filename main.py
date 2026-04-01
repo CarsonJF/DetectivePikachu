@@ -8,27 +8,44 @@ def main():
     
     if not os.path.exists(env_dir):
         print("==> Node.js environment not found. Installing via nodeenv...")
+        # Check if nodeenv is installed
+        try:
+            subprocess.run([sys.executable, "-m", "nodeenv", "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        except subprocess.CalledProcessError:
+            print("ERROR: 'nodeenv' is not installed! Run: pip install nodeenv")
+            sys.exit(1)
+            
         # create Node.js environment
         subprocess.run([sys.executable, "-m", "nodeenv", env_dir], check=True)
     
-    # Path to the nodeenv bin directory
-    node_bin = os.path.join(env_dir, "bin")
+    # Path to the nodeenv bin/Scripts directory
+    if os.name == 'nt': # Windows
+        node_bin = os.path.join(env_dir, "Scripts")
+    else:               # Linux / Pterodactyl
+        node_bin = os.path.join(env_dir, "bin")
     
     # Update PATH to include the nodeenv bin so tools like npm and node can be found
-    os.environ["PATH"] = f"{node_bin}:{os.environ.get('PATH', '')}"
+    os.environ["PATH"] = f"{node_bin}{os.pathsep}{os.environ.get('PATH', '')}"
     
+    # Helper to resolve npm command path appropriately on Windows
+    npm_cmd = "npm.cmd" if os.name == 'nt' else "npm"
+
     print("==> Installing / Updating npm dependencies...")
-    # Using npm ci if package-lock is present, else npm i
-    if os.path.exists("package-lock.json"):
-        subprocess.run(["npm", "ci"], check=True)
-    else:
-        subprocess.run(["npm", "install"], check=True)
+    # Always use npm install since npm ci will crash if the user modifies package.json without updating package-lock.json locally
+    subprocess.run([npm_cmd, "install"], check=True)
+    
+    print("==> Rebuilding native modules (fixes better-sqlite3 errors)...")
+    subprocess.run([npm_cmd, "rebuild"], check=True)
         
     print("==> Starting Detective Pikachu bot...")
     # Executing the npm start script
-    # Replaces the current process with the node process for better signal handling
     sys.stdout.flush()
-    os.execvp("npm", ["npm", "start"])
+    if os.name == 'nt':
+        # On Windows, os.execvp might not handle shell builtins cleanly, so we use subprocess
+        subprocess.run([npm_cmd, "start"], check=True)
+    else:
+        # Replaces the current process with the node process for better signal handling
+        os.execvp(npm_cmd, [npm_cmd, "start"])
 
 if __name__ == "__main__":
     main()
