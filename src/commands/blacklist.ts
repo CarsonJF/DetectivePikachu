@@ -1,12 +1,12 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction, PermissionsBitField, User, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction, PermissionsBitField, User, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, GuildMember } from 'discord.js';
 import db from '../database';
 import { clanTagCache } from '../index';
+import { isAuthorized } from '../configManager';
 
 export default {
   data: new SlashCommandBuilder()
     .setName('blacklist')
     .setDescription('Manage the blacklist rules.')
-    .setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator)
     .addSubcommand(sub => 
       sub.setName('add').setDescription('Add a new blacklist rule')
         .addStringOption(opt => opt.setName('pattern').setDescription('The exact string or regex pattern.').setRequired(true))
@@ -56,9 +56,16 @@ export default {
 
   async execute(interaction: ChatInputCommandInteraction) {
     const subcommand = interaction.options.getSubcommand();
+    const member = interaction.member as GuildMember | null;
 
     const successEmbed = (msg: string) => new EmbedBuilder().setColor(0x00FF00).setDescription(`✅ ${msg}`);
     const errorEmbed = (msg: string) => new EmbedBuilder().setColor(0xFF0000).setDescription(`❌ ${msg}`);
+
+    // Allow whitelisted roles to list, but require full admin for everything else
+    const requireAdmin = subcommand !== 'list';
+    if (!isAuthorized(member, requireAdmin)) {
+      return interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
+    }
 
     if (subcommand === 'add') {
       const pattern = interaction.options.getString('pattern', true);
