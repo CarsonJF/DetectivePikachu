@@ -1,0 +1,26 @@
+{
+  "name": "detective-pikachu",
+  "version": "1.0.0",
+  "description": "Discord Bot for Server Moderation",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "test:rpc": "node test-rpc.js",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^12.8.0",
+    "discord-rpc": "^4.0.1",
+    "discord.js": "^14.26.0",
+    "dotenv": "^17.3.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.5.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  }
+}
