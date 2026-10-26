@@ -24,6 +24,12 @@ db.exec(`
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS excluded_users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    userId TEXT NOT NULL UNIQUE,
+    addedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 export default db;

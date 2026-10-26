@@ -53,10 +53,14 @@ export function evalRules(member: GuildMember, rules: BlacklistRule[]): FlaggedI
 
 export async function scanMembers(members: GuildMember[] | IterableIterator<GuildMember>): Promise<FlaggedItem[]> {
   const rules = db.prepare('SELECT * FROM blacklist_rules').all() as BlacklistRule[];
+  const excluded = db.prepare('SELECT userId FROM excluded_users').all() as { userId: string }[];
+  const excludedSet = new Set(excluded.map(e => e.userId));
 
   const flaggedItems: FlaggedItem[] = [];
   let count = 0;
   for (const member of members) {
+    if (excludedSet.has(member.user.id)) continue;
+    
     const flags = evalRules(member, rules);
     if (flags.length > 0) {
       flaggedItems.push(...flags);
